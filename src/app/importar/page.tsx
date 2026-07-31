@@ -1,12 +1,12 @@
 "use client";
 
 import { Header } from "@/components/Header";
-import { useAppStore } from "@/store/useAppStore";
+import { useImportAction } from "@/hooks/useCastigoStore";
 import { useState } from "react";
 import { Upload, FileSpreadsheet, CheckCircle2 } from "lucide-react";
 
 export default function ImportarPage() {
-  const importDebtors = useAppStore((s) => s.importDebtors);
+  const importDebtors = useImportAction();
   const [preview, setPreview] = useState<any[]>([]);
   const [imported, setImported] = useState(false);
   const [error, setError] = useState("");
