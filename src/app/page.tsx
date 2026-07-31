@@ -1,14 +1,17 @@
 "use client";
 
+import { useMemo } from "react";
 import { Header } from "@/components/Header";
 import { StatsCards } from "@/components/StatsCards";
 import { DebtorCard } from "@/components/DebtorCard";
 import { useAppStore } from "@/store/useAppStore";
+import { prioritizeDebtors } from "@/lib/utils";
 import { AlertTriangle, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export default function DashboardPage() {
-  const queue = useAppStore((s) => s.getPrioritizedQueue());
+  const debtors = useAppStore((s) => s.debtors);
+  const queue = useMemo(() => prioritizeDebtors(debtors), [debtors]);
   const top = queue.slice(0, 5);
 
   return (

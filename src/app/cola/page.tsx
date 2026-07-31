@@ -1,25 +1,29 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { Header } from "@/components/Header";
 import { DebtorCard } from "@/components/DebtorCard";
 import { useAppStore } from "@/store/useAppStore";
-import { useState } from "react";
+import { prioritizeDebtors } from "@/lib/utils";
 import { Search, Filter } from "lucide-react";
 
 export default function ColaPage() {
-  const queue = useAppStore((s) => s.getPrioritizedQueue());
+  const debtors = useAppStore((s) => s.debtors);
+  const queue = useMemo(() => prioritizeDebtors(debtors), [debtors]);
   const [query, setQuery] = useState("");
   const [minScore, setMinScore] = useState(0);
 
-  const filtered = queue.filter((d) => {
-    const matchQuery =
-      !query ||
-      d.name.toLowerCase().includes(query.toLowerCase()) ||
-      d.document.includes(query) ||
-      d.phone.includes(query);
-    const matchScore = d.recoveryScore >= minScore;
-    return matchQuery && matchScore;
-  });
+  const filtered = useMemo(() => {
+    return queue.filter((d) => {
+      const matchQuery =
+        !query ||
+        d.name.toLowerCase().includes(query.toLowerCase()) ||
+        d.document.includes(query) ||
+        d.phone.includes(query);
+      const matchScore = d.recoveryScore >= minScore;
+      return matchQuery && matchScore;
+    });
+  }, [queue, query, minScore]);
 
   return (
     <div className="min-h-screen pb-20">
