@@ -92,3 +92,129 @@ export function prioritizeDebtors(debtors: Debtor[]): Debtor[] {
     .filter((d) => d.status !== "recuperado" && d.status !== "incobrable")
     .sort((a, b) => b.recoveryScore - a.recoveryScore);
 }
+
+/** Active PTP derived from latest promesa_pago management per debtor */
+export interface ActivePromise {
+  debtorId: string;
+  debtorName: string;
+  phone: string;
+  amount: number;
+  promiseDate: string;
+  managementId: string;
+  daysUntilDue: number;
+  isOverdue: boolean;
+  isDueToday: boolean;
+}
+
+export function getActivePromises(
+  debtors: { id: string; name: string; phone: string; status: string }[],
+  managements: {
+    id: string;
+    debtorId: string;
+    result: string;
+    promiseAmount?: number;
+    promiseDate?: string;
+    date: string;
+  }[]
+): ActivePromise[] {
+  const byDebtor = new Map<string, (typeof managements)[0]>();
+  for (const m of managements) {
+    if (m.result !== "promesa_pago" || !m.promiseDate) continue;
+    const prev = byDebtor.get(m.debtorId);
+    if (!prev || m.date > prev.date) byDebtor.set(m.debtorId, m);
+  }
+
+  const result: ActivePromise[] = [];
+  for (const d of debtors) {
+    if (d.status !== "promesa") continue;
+    const m = byDebtor.get(d.id);
+    if (!m?.promiseDate) continue;
+    const due = m.promiseDate.slice(0, 10);
+    const daysFromDue = daysBetween(due);
+    result.push({
+      debtorId: d.id,
+      debtorName: d.name,
+      phone: d.phone,
+      amount: m.promiseAmount || 0,
+      promiseDate: due,
+      managementId: m.id,
+      daysUntilDue: -daysFromDue,
+      isOverdue: daysFromDue > 0,
+      isDueToday: daysFromDue === 0,
+    });
+  }
+  return result.sort((a, b) => a.daysUntilDue - b.daysUntilDue);
+}
+
+export function escapeCsv(value: string | number | undefined | null): string {
+  const s = String(value ?? "");
+  if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
+export function downloadCsv(filename: string, rows: string[][]) {
+  const bom = "\uFEFF";
+  const body = rows.map((r) => r.map(escapeCsv).join(",")).join("\n");
+  const blob = new Blob([bom + body], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export type MessageTemplate = {
+  id: string;
+  channel: "whatsapp" | "sms" | "email";
+  title: string;
+  body: string;
+};
+
+export const MESSAGE_TEMPLATES: MessageTemplate[] = [
+  {
+    id: "wa-saludo",
+    channel: "whatsapp",
+    title: "Saludo inicial",
+    body: "Hola {nombre}, le escribimos de {institucion} respecto a su cuenta con saldo de {saldo}. Queremos ayudarle a regularizar su situación de forma flexible. ¿Podemos conversar unos minutos?",
+  },
+  {
+    id: "wa-quita",
+    channel: "whatsapp",
+    title: "Oferta de quita",
+    body: "Hola {nombre}, tenemos una oferta especial para liquidar su cuenta: puede pagar solo {quita} (descuento del {porcentaje}%) y cerrar el caso. Esta propuesta es por tiempo limitado. ¿Le interesa?",
+  },
+  {
+    id: "wa-promesa",
+    channel: "whatsapp",
+    title: "Recordatorio de promesa",
+    body: "Hola {nombre}, le recordamos su compromiso de pago de {saldo_promesa} para el {fecha_promesa}. Si ya realizó el pago, ignore este mensaje. Si necesita reprogramar, respóndanos por este medio.",
+  },
+  {
+    id: "wa-vencida",
+    channel: "whatsapp",
+    title: "Promesa vencida",
+    body: "Hola {nombre}, notamos que la promesa de pago de {saldo_promesa} prevista para el {fecha_promesa} aún no se refleja. ¿Podemos ayudarle a reprogramar o aplicar una quita para facilitar el cierre?",
+  },
+  {
+    id: "sms-corto",
+    channel: "sms",
+    title: "SMS corto",
+    body: "{institucion}: Hola {nombre}, saldo {saldo}. Oferta de liquidación disponible. Info: {telefono_agente}",
+  },
+  {
+    id: "email-formal",
+    channel: "email",
+    title: "Email formal",
+    body: "Estimado/a {nombre},\n\nNos dirigimos a usted en relación con la cuenta asociada al documento {documento}, con saldo pendiente de {saldo}.\n\nDeseamos ofrecerle alternativas de pago y posibles descuentos por liquidación anticipada.\n\nQuedamos atentos a su respuesta.\n\nSaludos cordiales,\n{agente}\n{institucion}",
+  },
+];
+
+export function fillTemplate(
+  body: string,
+  vars: Record<string, string>
+): string {
+  return body.replace(/\{(\w+)\}/g, (_, key) => vars[key] ?? `{${key}}`);
+}
