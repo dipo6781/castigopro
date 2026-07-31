@@ -1,14 +1,12 @@
 "use client";
 
 import { Header } from "@/components/Header";
-import { useAppStore } from "@/store/useAppStore";
+import { useConfigActions } from "@/hooks/useCastigoStore";
 import { useState } from "react";
 import { User, Trash2, Shield } from "lucide-react";
 
 export default function ConfigPage() {
-  const agentName = useAppStore((s) => s.agentName);
-  const setAgentName = useAppStore((s) => s.setAgentName);
-  const clearAll = useAppStore((s) => s.clearAll);
+  const { agentName, setAgentName, clearAll } = useConfigActions();
   const [name, setName] = useState(agentName);
   const [cleared, setCleared] = useState(false);
 
@@ -65,7 +63,7 @@ export default function ConfigPage() {
         </div>
 
         <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5">
-          <div className="flex items-center gap-2 text-sm font-semibold text-rose-800">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
             <Trash2 className="h-4 w-4" /> Zona de peligro
           </div>
           <p className="mt-2 text-sm text-rose-700">

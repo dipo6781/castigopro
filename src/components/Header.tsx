@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, ListOrdered, Upload, Settings, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAppStore } from "@/store/useAppStore";
+import { useAgentName } from "@/hooks/useCastigoStore";
 
 const nav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -15,7 +15,7 @@ const nav = [
 
 export function Header() {
   const pathname = usePathname();
-  const agentName = useAppStore((s) => s.agentName);
+  const agentName = useAgentName();
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur-md">
