@@ -2,7 +2,11 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { Header } from "@/components/Header";
-import { useAppStore } from "@/store/useAppStore";
+import {
+  useDebtor,
+  useDebtorManagements,
+  useDebtorActions,
+} from "@/hooks/useCastigoStore";
 import {
   formatCurrency,
   formatDate,
@@ -50,11 +54,9 @@ export default function CasoPage() {
   const router = useRouter();
   const id = params.id as string;
 
-  const debtor = useAppStore((s) => s.getDebtor(id));
-  const managements = useAppStore((s) => s.getManagementsForDebtor(id));
-  const addManagement = useAppStore((s) => s.addManagement);
-  const createSettlement = useAppStore((s) => s.createSettlement);
-  const markAsRecovered = useAppStore((s) => s.markAsRecovered);
+  const debtor = useDebtor(id);
+  const managements = useDebtorManagements(id);
+  const { addManagement, createSettlement, markAsRecovered } = useDebtorActions();
 
   const [showForm, setShowForm] = useState(false);
   const [showQuita, setShowQuita] = useState(false);
