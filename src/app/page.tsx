@@ -3,6 +3,8 @@
 import { Header } from "@/components/Header";
 import { StatsCards } from "@/components/StatsCards";
 import { DebtorCard } from "@/components/DebtorCard";
+import { PromisesPanel } from "@/components/PromisesPanel";
+import { NextCaseButton } from "@/components/NextCaseButton";
 import { usePrioritizedQueue } from "@/hooks/useCastigoStore";
 import { AlertTriangle, Sparkles } from "lucide-react";
 import Link from "next/link";
@@ -31,7 +33,7 @@ export default function DashboardPage() {
             </div>
             <Sparkles className="h-8 w-8 text-brand-300 opacity-80" />
           </div>
-          <div className="mt-4 flex gap-3">
+          <div className="mt-4 flex flex-wrap gap-3">
             <Link
               href="/cola"
               className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-brand-800 shadow-sm transition hover:bg-brand-50"
@@ -45,9 +47,14 @@ export default function DashboardPage() {
               Importar cartera
             </Link>
           </div>
+          <div className="mt-3">
+            <NextCaseButton />
+          </div>
         </div>
 
         <StatsCards />
+
+        <PromisesPanel />
 
         <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
