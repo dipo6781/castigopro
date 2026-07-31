@@ -62,9 +62,9 @@ const sampleDebtors: Debtor[] = [
     originalAmount: 18500,
     currentBalance: 18500,
     writeOffDate: "2025-11-15",
-    daysSinceWriteOff: 0,
+    daysSinceWriteOff: 257,
     product: "Crédito personal",
-    recoveryScore: 0,
+    recoveryScore: 70,
     status: "pendiente",
   },
   {
@@ -75,9 +75,9 @@ const sampleDebtors: Debtor[] = [
     originalAmount: 4200,
     currentBalance: 4200,
     writeOffDate: "2025-08-20",
-    daysSinceWriteOff: 0,
+    daysSinceWriteOff: 344,
     product: "Tarjeta de crédito",
-    recoveryScore: 0,
+    recoveryScore: 90,
     status: "pendiente",
   },
   {
@@ -88,9 +88,9 @@ const sampleDebtors: Debtor[] = [
     originalAmount: 9800,
     currentBalance: 9800,
     writeOffDate: "2024-12-01",
-    daysSinceWriteOff: 0,
+    daysSinceWriteOff: 606,
     product: "Crédito auto",
-    recoveryScore: 0,
+    recoveryScore: 70,
     status: "en_gestion",
   },
   {
@@ -101,9 +101,9 @@ const sampleDebtors: Debtor[] = [
     originalAmount: 1250,
     currentBalance: 1250,
     writeOffDate: "2026-01-10",
-    daysSinceWriteOff: 0,
+    daysSinceWriteOff: 201,
     product: "Crédito consumo",
-    recoveryScore: 0,
+    recoveryScore: 100,
     status: "pendiente",
   },
   {
@@ -114,16 +114,12 @@ const sampleDebtors: Debtor[] = [
     originalAmount: 27500,
     currentBalance: 27500,
     writeOffDate: "2025-03-15",
-    daysSinceWriteOff: 0,
+    daysSinceWriteOff: 502,
     product: "Crédito hipotecario residual",
-    recoveryScore: 0,
+    recoveryScore: 55,
     status: "pendiente",
   },
-].map((d) => {
-  const days = daysBetween(d.writeOffDate);
-  const score = calculateRecoveryScore({ ...d, daysSinceWriteOff: days });
-  return { ...d, daysSinceWriteOff: days, recoveryScore: score };
-});
+];
 
 export const useAppStore = create<AppState>()(
   persist(
