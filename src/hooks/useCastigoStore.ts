@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useAppStore } from "@/store/useAppStore";
-import { prioritizeDebtors } from "@/lib/utils";
+import { prioritizeDebtors, getActivePromises } from "@/lib/utils";
 import type { Debtor, Management } from "@/types";
 
 /** Stable slice: debtors array reference only changes when data changes */
@@ -107,4 +107,24 @@ export function useConfigActions() {
       clearAll: s.clearAll,
     }))
   );
+}
+
+export function useActivePromises() {
+  const debtors = useDebtors();
+  const managements = useManagements();
+  return useMemo(
+    () => getActivePromises(debtors, managements),
+    [debtors, managements]
+  );
+}
+
+export function useNextDebtorId(currentId?: string) {
+  const queue = usePrioritizedQueue();
+  return useMemo(() => {
+    if (!queue.length) return null;
+    if (!currentId) return queue[0]?.id ?? null;
+    const idx = queue.findIndex((d) => d.id === currentId);
+    if (idx < 0) return queue[0]?.id ?? null;
+    return queue[idx + 1]?.id ?? null;
+  }, [queue, currentId]);
 }
