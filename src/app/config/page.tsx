@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { useConfigActions } from "@/hooks/useCastigoStore";
 import { useState } from "react";
 import { User, Trash2, Shield } from "lucide-react";
+import { ExportPanel } from "@/components/ExportPanel";
 
 export default function ConfigPage() {
   const { agentName, setAgentName, clearAll } = useConfigActions();
@@ -62,8 +63,10 @@ export default function ConfigPage() {
           </ul>
         </div>
 
+        <ExportPanel />
+
         <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+          <div className="flex items-center gap-2 text-sm font-semibold text-rose-800">
             <Trash2 className="h-4 w-4" /> Zona de peligro
           </div>
           <p className="mt-2 text-sm text-rose-700">
