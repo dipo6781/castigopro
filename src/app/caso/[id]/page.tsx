@@ -7,6 +7,8 @@ import {
   useDebtorManagements,
   useDebtorActions,
 } from "@/hooks/useCastigoStore";
+import { MessageTemplates } from "@/components/MessageTemplates";
+import { NextCaseButton } from "@/components/NextCaseButton";
 import {
   formatCurrency,
   formatDate,
@@ -56,7 +58,8 @@ export default function CasoPage() {
 
   const debtor = useDebtor(id);
   const managements = useDebtorManagements(id);
-  const { addManagement, createSettlement, markAsRecovered } = useDebtorActions();
+  const { addManagement, createSettlement, markAsRecovered, updateDebtorStatus } =
+    useDebtorActions();
 
   const [showForm, setShowForm] = useState(false);
   const [showQuita, setShowQuita] = useState(false);
@@ -86,6 +89,7 @@ export default function CasoPage() {
 
   const status = getStatusBadge(debtor.status);
   const scoreClass = getScoreColor(debtor.recoveryScore);
+  const lastPromise = managements.find((m) => m.result === "promesa_pago");
 
   const handleSubmitManagement = () => {
     addManagement({
@@ -152,7 +156,9 @@ export default function CasoPage() {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-xl font-bold text-slate-900">{debtor.name}</h1>
-                <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${status.class}`}>
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${status.class}`}
+                >
                   {status.label}
                 </span>
               </div>
@@ -174,9 +180,7 @@ export default function CasoPage() {
             </div>
             <div className="rounded-xl bg-slate-50 p-3">
               <p className="text-[11px] font-medium text-slate-500">Días desde castigo</p>
-              <p className="text-xl font-bold text-slate-900">
-                {debtor.daysSinceWriteOff}
-              </p>
+              <p className="text-xl font-bold text-slate-900">{debtor.daysSinceWriteOff}</p>
             </div>
           </div>
 
@@ -220,6 +224,65 @@ export default function CasoPage() {
             <Percent className="h-4 w-4" /> Proponer quita
           </button>
         </div>
+
+        {debtor.status === "promesa" && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <p className="text-sm font-semibold text-amber-900">
+              Promesa activa — acciones rápidas
+            </p>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              <button
+                onClick={() => {
+                  addManagement({
+                    debtorId: id,
+                    channel: "whatsapp",
+                    result: "pago_total",
+                    notes: "Promesa cumplida",
+                    promiseAmount: lastPromise?.promiseAmount,
+                  });
+                  markAsRecovered(
+                    id,
+                    lastPromise?.promiseAmount || debtor.currentBalance
+                  );
+                }}
+                className="rounded-xl bg-emerald-600 py-2 text-xs font-semibold text-white"
+              >
+                Cumplida
+              </button>
+              <button
+                onClick={() => {
+                  addManagement({
+                    debtorId: id,
+                    channel: "whatsapp",
+                    result: "otro",
+                    notes: "Promesa incumplida — seguimiento",
+                  });
+                  updateDebtorStatus(id, "en_gestion");
+                }}
+                className="rounded-xl bg-rose-600 py-2 text-xs font-semibold text-white"
+              >
+                Incumplida
+              </button>
+              <button
+                onClick={() => {
+                  setShowForm(true);
+                  setResult("promesa_pago");
+                }}
+                className="rounded-xl bg-amber-600 py-2 text-xs font-semibold text-white"
+              >
+                Reagendar
+              </button>
+            </div>
+          </div>
+        )}
+
+        <NextCaseButton currentId={id} />
+
+        <MessageTemplates
+          debtor={debtor}
+          promiseAmount={lastPromise?.promiseAmount}
+          promiseDate={lastPromise?.promiseDate}
+        />
 
         {showQuita && (
           <div className="rounded-2xl border border-brand-200 bg-brand-50 p-5">
@@ -314,9 +377,7 @@ export default function CasoPage() {
                   </div>
                   {result === "promesa_pago" && (
                     <div>
-                      <label className="text-xs font-medium text-slate-500">
-                        Fecha promesa
-                      </label>
+                      <label className="text-xs font-medium text-slate-500">Fecha promesa</label>
                       <input
                         type="date"
                         value={promiseDate}
@@ -366,10 +427,7 @@ export default function CasoPage() {
           ) : (
             <div className="space-y-3">
               {managements.map((m) => (
-                <div
-                  key={m.id}
-                  className="rounded-xl border border-slate-200 bg-white p-4"
-                >
+                <div key={m.id} className="rounded-xl border border-slate-200 bg-white p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="text-sm font-semibold text-slate-800">
@@ -386,9 +444,7 @@ export default function CasoPage() {
                       </span>
                     )}
                   </div>
-                  {m.notes && (
-                    <p className="mt-2 text-sm text-slate-600">{m.notes}</p>
-                  )}
+                  {m.notes && <p className="mt-2 text-sm text-slate-600">{m.notes}</p>}
                   {m.promiseDate && (
                     <p className="mt-1 flex items-center gap-1 text-xs text-amber-700">
                       <CheckCircle2 className="h-3.5 w-3.5" />
