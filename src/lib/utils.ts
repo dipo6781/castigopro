@@ -15,20 +15,31 @@ export function formatCurrency(amount: number, currency = "USD"): string {
   }).format(amount);
 }
 
-export function formatDate(dateStr: string): string {
-  if (!dateStr) return "—";
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("es-MX", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+/** Parse YYYY-MM-DD as local date to avoid UTC timezone hydration mismatches */
+function parseLocalDate(dateStr: string): Date {
+  const part = dateStr.slice(0, 10);
+  const [y, m, d] = part.split("-").map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
 }
 
-export function daysBetween(dateStr: string): number {
-  const d = new Date(dateStr);
-  const now = new Date();
-  const diff = now.getTime() - d.getTime();
+export function formatDate(dateStr: string): string {
+  if (!dateStr) return "—";
+  const d = parseLocalDate(dateStr);
+  const day = String(d.getDate()).padStart(2, "0");
+  const months = [
+    "ene", "feb", "mar", "abr", "may", "jun",
+    "jul", "ago", "sep", "oct", "nov", "dic",
+  ];
+  const month = months[d.getMonth()];
+  const year = d.getFullYear();
+  return `${day} ${month} ${year}`;
+}
+
+export function daysBetween(dateStr: string, nowMs?: number): number {
+  const d = parseLocalDate(dateStr);
+  const now = nowMs !== undefined ? new Date(nowMs) : new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diff = start.getTime() - d.getTime();
   return Math.floor(diff / (1000 * 60 * 60 * 24));
 }
 
@@ -36,24 +47,22 @@ export function daysBetween(dateStr: string): number {
 export function calculateRecoveryScore(debtor: Partial<Debtor>): number {
   let score = 50;
 
-  // Amount: mid-range is better for automation
   const amount = debtor.currentBalance || 0;
   if (amount > 0 && amount < 500) score += 15;
   else if (amount >= 500 && amount < 3000) score += 25;
   else if (amount >= 3000 && amount < 10000) score += 10;
   else score -= 5;
 
-  // Freshness of write-off
-  const days = debtor.daysSinceWriteOff ?? daysBetween(debtor.writeOffDate || new Date().toISOString());
+  const days =
+    debtor.daysSinceWriteOff ??
+    daysBetween(debtor.writeOffDate || "2025-01-01");
   if (days < 90) score += 25;
   else if (days < 180) score += 15;
   else if (days < 365) score += 5;
   else if (days > 730) score -= 20;
 
-  // Has phone
   if (debtor.phone && debtor.phone.length > 7) score += 10;
 
-  // Status
   if (debtor.status === "promesa") score += 15;
   if (debtor.status === "recuperado") score = 100;
   if (debtor.status === "incobrable") score = 5;
@@ -76,4 +85,10 @@ export function getStatusBadge(status: Debtor["status"]) {
     incobrable: { label: "Incobrable", class: "bg-rose-100 text-rose-700" },
   };
   return map[status] || map.pendiente;
+}
+
+export function prioritizeDebtors(debtors: Debtor[]): Debtor[] {
+  return [...debtors]
+    .filter((d) => d.status !== "recuperado" && d.status !== "incobrable")
+    .sort((a, b) => b.recoveryScore - a.recoveryScore);
 }
