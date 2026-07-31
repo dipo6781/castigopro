@@ -1,8 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { v4 as uuidv4 } from "uuid";
+import { persist, createJSONStorage } from "zustand/middleware";
 import {
   Debtor,
   Management,
@@ -12,13 +11,19 @@ import {
 } from "@/types";
 import { calculateRecoveryScore, daysBetween } from "@/lib/utils";
 
+function uid() {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return `id-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
 interface AppState {
   debtors: Debtor[];
   managements: Management[];
   settlements: SettlementOffer[];
   agentName: string;
 
-  // Actions
   setAgentName: (name: string) => void;
   importDebtors: (rows: Partial<Debtor>[]) => void;
   addManagement: (data: {
@@ -135,7 +140,7 @@ export const useAppStore = create<AppState>()(
           const writeOff = r.writeOffDate || new Date().toISOString().slice(0, 10);
           const days = daysBetween(writeOff);
           const base: Debtor = {
-            id: uuidv4(),
+            id: uid(),
             name: r.name || "Sin nombre",
             document: r.document || "",
             phone: r.phone || "",
@@ -158,7 +163,7 @@ export const useAppStore = create<AppState>()(
 
       addManagement: (data) => {
         const mgmt: Management = {
-          id: uuidv4(),
+          id: uid(),
           debtorId: data.debtorId,
           date: new Date().toISOString(),
           channel: data.channel,
@@ -196,7 +201,7 @@ export const useAppStore = create<AppState>()(
         const debtor = get().debtors.find((d) => d.id === debtorId);
         if (!debtor) return;
         const offer: SettlementOffer = {
-          id: uuidv4(),
+          id: uid(),
           debtorId,
           originalBalance: debtor.currentBalance,
           offeredAmount,
@@ -282,6 +287,8 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "castigopro-storage",
+      storage: createJSONStorage(() => localStorage),
+      skipHydration: true,
     }
   )
 );
