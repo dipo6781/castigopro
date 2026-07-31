@@ -1,61 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
-import { useAppStore } from "@/store/useAppStore";
+import { usePortfolioStats } from "@/hooks/useCastigoStore";
 import { formatCurrency } from "@/lib/utils";
 import { DollarSign, Users, Target, TrendingUp } from "lucide-react";
 
 export function StatsCards() {
-  const debtors = useAppStore((s) => s.debtors);
-  const managements = useAppStore((s) => s.managements);
-
-  const stats = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .slice(0, 10);
-
-    const recoveredToday = managements
-      .filter(
-        (m) =>
-          m.date.startsWith(today) &&
-          (m.result === "pago_total" ||
-            m.result === "acuerdo_quita" ||
-            m.result === "pago_parcial")
-      )
-      .reduce((sum, m) => sum + (m.promiseAmount || m.settlementOffer || 0), 0);
-
-    const recoveredWeek = managements
-      .filter(
-        (m) =>
-          m.date >= weekAgo &&
-          (m.result === "pago_total" ||
-            m.result === "acuerdo_quita" ||
-            m.result === "pago_parcial")
-      )
-      .reduce((sum, m) => sum + (m.promiseAmount || m.settlementOffer || 0), 0);
-
-    const promisesActive = debtors.filter((d) => d.status === "promesa").length;
-    const totalBalance = debtors
-      .filter((d) => d.status !== "recuperado")
-      .reduce((s, d) => s + d.currentBalance, 0);
-
-    const avgScore =
-      debtors.length > 0
-        ? Math.round(
-            debtors.reduce((s, d) => s + d.recoveryScore, 0) / debtors.length
-          )
-        : 0;
-
-    return {
-      totalAccounts: debtors.length,
-      totalBalance,
-      recoveredToday,
-      recoveredWeek,
-      promisesActive,
-      avgScore,
-    };
-  }, [debtors, managements]);
+  const stats = usePortfolioStats();
 
   const cards = [
     {

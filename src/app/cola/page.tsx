@@ -3,13 +3,11 @@
 import { useMemo, useState } from "react";
 import { Header } from "@/components/Header";
 import { DebtorCard } from "@/components/DebtorCard";
-import { useAppStore } from "@/store/useAppStore";
-import { prioritizeDebtors } from "@/lib/utils";
+import { usePrioritizedQueue } from "@/hooks/useCastigoStore";
 import { Search, Filter } from "lucide-react";
 
 export default function ColaPage() {
-  const debtors = useAppStore((s) => s.debtors);
-  const queue = useMemo(() => prioritizeDebtors(debtors), [debtors]);
+  const queue = usePrioritizedQueue();
   const [query, setQuery] = useState("");
   const [minScore, setMinScore] = useState(0);
 
@@ -20,8 +18,7 @@ export default function ColaPage() {
         d.name.toLowerCase().includes(query.toLowerCase()) ||
         d.document.includes(query) ||
         d.phone.includes(query);
-      const matchScore = d.recoveryScore >= minScore;
-      return matchQuery && matchScore;
+      return matchQuery && d.recoveryScore >= minScore;
     });
   }, [queue, query, minScore]);
 
